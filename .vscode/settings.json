@@ -1,0 +1,10 @@
+{
+    "files.watcherExclude": {
+        "**/target": true
+    },
+    "search.exclude": {
+        "**/target": true,
+        "**/.bloop": true,
+        "**/.metals": true
+    }
+}

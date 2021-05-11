@@ -1,0 +1,55 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/Simon-Bru/scala-sbt-vscode-remote-container/blob/main/README.md
+{
+	"name": "SBT Remote Container Environment",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"INSTALL_MAVEN": "false",
+			"INSTALL_GRADLE": "false",
+			"HTTP_PROXY_HOST": "host.docker.internal", // Comment if your computer is not using a proxy
+			"HTTP_PROXY_PORT": "3128"
+		}
+	},
+	"shutdownAction": "none", // This is useful if you want to open different folder than the project's root
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {   
+         // Comment the following lines if your computer doesn't use a proxy
+		"http.proxy": "http://host.docker.internal:3128",
+		"metals.serverProperties": [
+			"-Dhttps.proxyHost=host.docker.internal",
+			"-Dhttps.proxyPort=3128",
+			"-Dhttp.proxyHost=host.docker.internal",
+			"-Dhttp.proxyPort=3128"
+		],
+		"metals.sbtScript": "/usr/local/sdkman/candidates/sbt/current/bin/sbt",
+		"terminal.integrated.defaultProfile.linux": "/bin/bash",
+		"java.home": "/docker-java-home",
+		"java.import.gradle.java.home": "/usr/local/sdkman/candidates/java/current",
+		"java.configuration.runtimes": [{
+			"default": true,
+			"name": "JavaSE-1.8",
+			"path": "/usr/local/sdkman/candidates/java/current"
+		}]
+	},
+
+	"mounts": [ // Mounting VSCode extensions folder in dedicated volume to prevent them downloading each time we build
+		"source=vscode-sbt-remote-env-extensions,target=/home/vscode/.vscode-server/extensions,type=volume",
+		"source=vscode-sbt-remote-env-extensions-insiders,target=/home/vscode/.vscode-server-insiders/extensions,type=volume",
+	],
+
+	"extensions": [ // Basic extension set to develop in scala, add your favorite ones
+		"scalameta.metals",
+		"scala-lang.scala"
+	],
+
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "sbt --version",
+	
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
+}
