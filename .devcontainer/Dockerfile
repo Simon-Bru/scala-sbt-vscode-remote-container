@@ -6,13 +6,16 @@ ARG HTTP_PROXY_PORT=""
 ENV http_proxy=${HTTP_PROXY_PORT:+http://${HTTP_PROXY_HOST}:${HTTP_PROXY_PORT}}
 ENV https_proxy=${HTTP_PROXY_PORT:+http://${HTTP_PROXY_HOST}:${HTTP_PROXY_PORT}}
 
+# Increase JVM memory limits
+ENV JAVA_OPTS='-Xms2048m -Xmx8g'
+
 # [Option] Install Maven
 ARG INSTALL_MAVEN="false"
 ARG MAVEN_VERSION=""
 # [Option] Install Gradle
 ARG INSTALL_GRADLE="false"
 ARG GRADLE_VERSION=""
-# Sbt version
+# [Option] Install Sbt
 ARG INSTALL_SBT="true"
 ARG SBT_VERSION=""
 
@@ -29,13 +32,27 @@ RUN mkdir -p /home/vscode/.vscode-server/extensions \
         /home/vscode/.vscode-server \
         /home/vscode/.vscode-server-insiders
 
+# APT proxy settings
+RUN if [ "${HTTP_PROXY_HOST}" != "" ]; then echo "Acquire::http::proxy \"http://${HTTP_PROXY_HOST}:${HTTP_PROXY_PORT}\";\n\
+Acquire::https::proxy \"http://${HTTP_PROXY_HOST}:${HTTP_PROXY_PORT}\";\n\
+Acquire::ftp::proxy \"http://${HTTP_PROXY_HOST}:${HTTP_PROXY_PORT}\";" > /etc/apt/apt.conf.d/proxy.conf; fi
+
+# Install Spark-Shell
+ARG INSTALL_SPARK=false
+ARG SPARK_VERSION=3.0.2
+ARG HADOOP_VERSION=3.2
+RUN if [ "${INSTALL_SPARK}" != "" ]; then apt-get update \
+    && wget https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
+    && tar -xvzf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
+    && mv spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}/ /opt/spark \
+    && rm spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz; fi
+
+ENV SPARK_HOME=/opt/spark
+ENV PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+
 # Proxy settings for Bloop
 USER vscode
 RUN if [ "${HTTP_PROXY_HOST}" != "" ]; then echo "-Dhttps.proxyHost=${HTTP_PROXY_HOST} \n\
 -Dhttps.proxyPort=${HTTP_PROXY_PORT} \n\
 -Dhttp.proxyHost=${HTTP_PROXY_HOST} \n\
--Dhttp.proxyPort=${HTTP_PROXY_PORT}" > /tmp/.jvmopts && mv /tmp/.jvmopts /home/vscode/.bloop/; fi
-
-# [Optional] Uncomment this section to install additional OS packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+-Dhttp.proxyPort=${HTTP_PROXY_PORT}" > /home/vscode/.bloop/.jvmopts; fi
