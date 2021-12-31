@@ -39,8 +39,9 @@ Acquire::ftp::proxy \"http://${HTTP_PROXY_HOST}:${HTTP_PROXY_PORT}\";" > /etc/ap
 
 # Install Spark-Shell
 ARG INSTALL_SPARK=false
-ARG SPARK_VERSION=3.0.2
+ARG SPARK_VERSION=3.1.2
 ARG HADOOP_VERSION=3.2
+ARG DELTA_VERSION=1.1.0
 RUN if [ "${INSTALL_SPARK}" != "" ]; then apt-get update \
     && wget https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
     && tar -xvzf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
@@ -50,9 +51,22 @@ RUN if [ "${INSTALL_SPARK}" != "" ]; then apt-get update \
 ENV SPARK_HOME=/opt/spark
 ENV PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
 
+# SBT Java version setting file
+RUN mkdir /etc/sbt && echo "-java-home\n\
+\$JAVA_HOME" > /etc/sbt/sbtopts
+
 # Proxy settings for Bloop
 USER vscode
 RUN if [ "${HTTP_PROXY_HOST}" != "" ]; then echo "-Dhttps.proxyHost=${HTTP_PROXY_HOST} \n\
 -Dhttps.proxyPort=${HTTP_PROXY_PORT} \n\
 -Dhttp.proxyHost=${HTTP_PROXY_HOST} \n\
 -Dhttp.proxyPort=${HTTP_PROXY_PORT}" > /home/vscode/.bloop/.jvmopts; fi
+
+# Proxy for Spark Shell (Delta package download)
+RUN echo "spark.sql.catalog.spark_catalog org.apache.spark.sql.delta.catalog.DeltaCatalog \n\
+spark.sql.extensions io.delta.sql.DeltaSparkSessionExtension \n\
+spark.jars.packages io.delta:delta-core_2.12:${DELTA_VERSION}" > $SPARK_HOME/conf/spark-defaults.conf
+RUN if [ "${HTTP_PROXY_HOST}" != "" ]; \
+    then echo "spark.driver.extraJavaOptions -Dhttps.proxyHost=${HTTP_PROXY_HOST} -Dhttps.proxyPort=${HTTP_PROXY_PORT} -Dhttp.proxyHost=${HTTP_PROXY_HOST} -Dhttp.proxyPort=${HTTP_PROXY_PORT} \n"\
+    > $SPARK_HOME/conf/spark-defaults.conf; \
+  fi
