@@ -16,7 +16,7 @@
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
-         // Uncomment the following lines if your computer uses a proxy
+    // Uncomment the following lines if your computer uses a proxy
 		// "http.proxy": "http://host.docker.internal:3128",
 		// "metals.serverProperties": [
 		// 	"-Dhttps.proxyHost=host.docker.internal",
@@ -45,7 +45,13 @@
 		"scala-lang.scala"
 	],
 
-    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // Uncomment for proxy setting in the remote container terminal
+ 	// "containerEnv": {
+	// 	"http_proxy": "http://host.docker.internal:3128",
+	// 	"https_proxy": "http://host.docker.internal:3128"
+	// },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	
 	// Use 'postCreateCommand' to run commands after the container is created.
